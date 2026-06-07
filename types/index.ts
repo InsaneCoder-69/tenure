@@ -37,6 +37,12 @@ export interface Observation {
   trend?: FreshnessTrend;
 }
 
+export interface LiveStats {
+  reviews: number;
+  issues: { total: number; block: number; warn: number; suggest: number };
+  feedback: { accepted: number; rejected: number };
+}
+
 export interface TeamMemory {
   conventions: Convention[];
   observations: Observation[];

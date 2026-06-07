@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { ReviewSession, TeamMemory, ReviewComment, Convention, FeedbackState } from '@/types';
+import type { ReviewSession, TeamMemory, ReviewComment, Convention, FeedbackState, LiveStats } from '@/types';
 
 export interface UseLiveReturn {
   session: ReviewSession | null;
@@ -12,6 +12,7 @@ export interface UseLiveReturn {
   isReviewing: boolean;
   error: string | null;
   feedbackStates: Record<string, FeedbackState>;
+  stats: LiveStats | null;
   handleFeedback: (comment: ReviewComment, accepted: boolean) => Promise<void>;
   submitDiff: (rawDiff: string, filePath: string) => Promise<void>;
 }
@@ -76,12 +77,21 @@ export function useLive(
   const [isReviewing, setIsReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedbackStates, setFeedbackStates] = useState<Record<string, FeedbackState>>({});
+  const [stats, setStats] = useState<LiveStats | null>(null);
 
   // Refresh memory in the background after feedback.
   const refreshMemory = useCallback(() => {
     fetch('/api/memory', { headers: JSON_HEADERS })
       .then(async (res) => {
         if (res.ok) setMemory((await res.json()) as TeamMemory);
+      })
+      .catch(() => null);
+  }, []);
+
+  const refreshStats = useCallback(() => {
+    fetch('/api/stats', { headers: JSON_HEADERS })
+      .then(async (res) => {
+        if (res.ok) setStats((await res.json()) as LiveStats);
       })
       .catch(() => null);
   }, []);
@@ -100,8 +110,9 @@ export function useLive(
         body: JSON.stringify({ diff, filePath: initialSession.filePath }),
       }),
       fetch('/api/memory', { headers: JSON_HEADERS }),
+      fetch('/api/stats',  { headers: JSON_HEADERS }),
     ])
-      .then(async ([reviewResult, memoryResult]) => {
+      .then(async ([reviewResult, memoryResult, statsResult]) => {
         if (reviewResult.status === 'fulfilled' && reviewResult.value.ok) {
           const live = (await reviewResult.value.json()) as ReviewSession;
           setSession({ ...initialSession, id: live.id, comments: live.comments });
@@ -125,6 +136,10 @@ export function useLive(
           console.error('[tenure] /api/memory failed on mount:', status, errBody);
         }
         setIsLoadingMemory(false);
+
+        if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
+          setStats((await statsResult.value.json()) as LiveStats);
+        }
       })
       .catch((err) => {
         console.error('[tenure] mount fetch error:', err);
@@ -148,11 +163,11 @@ export function useLive(
         ...prev,
         [comment.id]: res.ok ? (accepted ? 'accepted' : 'rejected') : 'idle',
       }));
-      if (res.ok) refreshMemory();
+      if (res.ok) { refreshMemory(); refreshStats(); }
     } catch {
       setFeedbackStates((prev) => ({ ...prev, [comment.id]: 'idle' }));
     }
-  }, [refreshMemory]);
+  }, [refreshMemory, refreshStats]);
 
   // User-triggered review: accepts plain code or a unified diff — normalizes automatically.
   const submitDiff = useCallback(async (rawDiff: string, filePath: string) => {
@@ -169,6 +184,7 @@ export function useLive(
       if (res.ok) {
         const live = (await res.json()) as ReviewSession;
         setSession({ id: live.id, filePath, diff: parseDiffLines(diff), comments: live.comments });
+        refreshStats();
       } else {
         const body = await res.text().catch(() => '(unreadable)');
         console.error('[tenure] /api/review failed:', res.status, body);
@@ -180,7 +196,7 @@ export function useLive(
     } finally {
       setIsReviewing(false);
     }
-  }, []);
+  }, [refreshStats]);
 
   const conventionMap = useMemo(
     () => new Map<string, Convention>((memory?.conventions ?? []).map((c) => [c.id, c])),
@@ -196,6 +212,7 @@ export function useLive(
     isLoadingMemory,
     isReviewing,
     error,
+    stats,
     feedbackStates,
     handleFeedback,
     submitDiff,

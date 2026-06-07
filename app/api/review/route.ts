@@ -135,6 +135,22 @@ export async function POST(req: NextRequest) {
       redis.set(cacheKey, JSON.stringify(session), { ex: CACHE_TTL_SECONDS }).catch(() => null);
     }
 
+    // Stats: increment counters — fire-and-forget via pipeline (one HTTP round-trip).
+    if (redis && comments.length > 0) {
+      const block   = comments.filter((c) => c.tier === 'block').length;
+      const warn    = comments.filter((c) => c.tier === 'warn').length;
+      const suggest = comments.filter((c) => c.tier === 'suggest').length;
+      const p = redis.pipeline();
+      p.incr('tenure:stats:reviews');
+      p.incrby('tenure:stats:issues:total', comments.length);
+      if (block)   p.incrby('tenure:stats:issues:block',   block);
+      if (warn)    p.incrby('tenure:stats:issues:warn',    warn);
+      if (suggest) p.incrby('tenure:stats:issues:suggest', suggest);
+      p.exec().catch(() => null);
+    } else if (redis) {
+      redis.incr('tenure:stats:reviews').catch(() => null);
+    }
+
     return Response.json(session);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { ReviewSession, TeamMemory, Convention } from '@/types';
 import { useLive } from '@/hooks/useLive';
 import ModeBar from './ModeBar';
+import StatsBar from './StatsBar';
 import DiffPanel from './DiffPanel';
 import MemoryPanel from './MemoryPanel';
 
@@ -32,6 +33,8 @@ export default function TenureApp({ session: initialSession, memory: initialMemo
           <span className="text-amber-400 text-xs font-mono">⚠ {live.error}</span>
         </div>
       )}
+
+      <StatsBar stats={live.stats} memory={live.memory} />
 
       <div className="flex flex-1 overflow-hidden min-h-0 relative">
         {isLoading && (

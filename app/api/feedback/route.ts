@@ -5,7 +5,7 @@ import {
   waitForProcessing,
   recall,
 } from '@/lib/hindsight';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, getRedis } from '@/lib/rate-limit';
 import type { ReviewComment } from '@/types';
 
 interface ObservationUpdate { text: string; proofCount: number; trend: string; }
@@ -92,6 +92,10 @@ export async function POST(req: NextRequest) {
   } catch {
     // Observation lookup is best-effort; a failure here must not fail the retain.
   }
+
+  // Stats: fire-and-forget.
+  getRedis()?.incr(accepted ? 'tenure:stats:feedback:accepted' : 'tenure:stats:feedback:rejected')
+    .catch(() => null);
 
   const response: FeedbackResponse = { retained: true, pending: false, observation };
   return Response.json(response);
