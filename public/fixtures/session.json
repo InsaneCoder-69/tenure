@@ -1,0 +1,80 @@
+{
+  "id": "session-demo-001",
+  "filePath": "src/hooks/userProfile.ts",
+  "diff": [
+    { "type": "header",  "lineNo": null, "oldLineNo": null, "content": "@@ -1,12 +1,21 @@" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 1,    "content": "import { useState } from 'react'" },
+    { "type": "added",   "lineNo": 1,    "oldLineNo": null, "content": "import { useState, useEffect } from 'react'" },
+    { "type": "context", "lineNo": 2,    "oldLineNo": 2,    "content": "" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 3,    "content": "async function fetchUserData(id: string): Promise<User> {" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 4,    "content": "  try {" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 5,    "content": "    const res = await fetch(`/api/users/${id}`)" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 6,    "content": "    if (!res.ok) throw new Error(res.statusText)" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 7,    "content": "    return res.json() as Promise<User>" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 8,    "content": "  } catch (e) {" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 9,    "content": "    throw new Error(`Failed to load user ${id}: ${e}`)" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 10,   "content": "  }" },
+    { "type": "added",   "lineNo": 3,    "oldLineNo": null, "content": "async function loadUser(id: string) {" },
+    { "type": "added",   "lineNo": 4,    "oldLineNo": null, "content": "  const res = await fetch(`/api/users/${id}`)" },
+    { "type": "added",   "lineNo": 5,    "oldLineNo": null, "content": "  return res.json() as any" },
+    { "type": "context", "lineNo": 6,    "oldLineNo": 11,   "content": "}" },
+    { "type": "context", "lineNo": 7,    "oldLineNo": 12,   "content": "" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 13,   "content": "export function useUserProfile(userId: string) {" },
+    { "type": "added",   "lineNo": 8,    "oldLineNo": null, "content": "export function userProfile(userId: string) {" },
+    { "type": "added",   "lineNo": 9,    "oldLineNo": null, "content": "  const [data, setData] = useState<any>(null)" },
+    { "type": "context", "lineNo": 10,   "oldLineNo": 14,   "content": "  const [loading, setLoading] = useState(true)" },
+    { "type": "context", "lineNo": 11,   "oldLineNo": 15,   "content": "" },
+    { "type": "context", "lineNo": 12,   "oldLineNo": 16,   "content": "  useEffect(() => {" },
+    { "type": "added",   "lineNo": 13,   "oldLineNo": null, "content": "    console.log('Loading user:', userId)" },
+    { "type": "added",   "lineNo": 14,   "oldLineNo": null, "content": "    loadUser(userId).then(d => { setData(d); setLoading(false) })" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 17,   "content": "    fetchUserData(userId)" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 18,   "content": "      .then(d => { setData(d); setLoading(false) })" },
+    { "type": "removed", "lineNo": null, "oldLineNo": 19,   "content": "      .catch(console.error)" },
+    { "type": "context", "lineNo": 15,   "oldLineNo": 20,   "content": "  }, [])" },
+    { "type": "context", "lineNo": 16,   "oldLineNo": 21,   "content": "" },
+    { "type": "context", "lineNo": 17,   "oldLineNo": 22,   "content": "  return { data, loading }" },
+    { "type": "context", "lineNo": 18,   "oldLineNo": 23,   "content": "}" }
+  ],
+  "comments": [
+    {
+      "id": "cmt-1",
+      "lineNo": 4,
+      "text": "Async functions must wrap `await` calls in try/catch. Unhandled promise rejections will crash the process in Node and silently swallow errors in the browser.",
+      "conventionId": "async-error-handling",
+      "tier": "block",
+      "rationale": "5 observations, stable — introduced after a Q3 2024 outage caused by an unhandled rejection in the auth service"
+    },
+    {
+      "id": "cmt-2",
+      "lineNo": 5,
+      "text": "Avoid `any` — use the concrete `User` type from `@/types`. The `any` annotation defeats type-checking for all downstream callers.",
+      "conventionId": "no-any",
+      "tier": "block",
+      "rationale": "6 observations, stable — zero-tolerance across the codebase since TypeScript strict mode was enabled"
+    },
+    {
+      "id": "cmt-3",
+      "lineNo": 8,
+      "text": "Custom hooks must start with `use`. React's linter rules and the runtime Rules of Hooks both depend on this prefix to identify hooks correctly.",
+      "conventionId": "hook-naming",
+      "tier": "warn",
+      "rationale": "4 observations, strengthening — flagged in 4 of the last 6 PRs touching the hooks directory"
+    },
+    {
+      "id": "cmt-4",
+      "lineNo": 9,
+      "text": "Same as line 5 — `useState<any>` is an `any` annotation. Replace with `useState<User | null>`.",
+      "conventionId": "no-any",
+      "tier": "block",
+      "rationale": "6 observations, stable"
+    },
+    {
+      "id": "cmt-5",
+      "lineNo": 13,
+      "text": "`console.log` must be removed before merging. Use the `logger` utility (`import { logger } from '@/lib/logger'`) for structured output.",
+      "conventionId": "no-console",
+      "tier": "warn",
+      "rationale": "4 observations, strengthening — appears in nearly every PR review; consider adding an ESLint rule"
+    }
+  ]
+}

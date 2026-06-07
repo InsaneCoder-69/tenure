@@ -1,0 +1,5 @@
+Annotate public API function signatures explicitly — don't rely on TypeScript inference for exported types
+Prefer `unknown` over `any` for untrusted external data; narrow with runtime type guards before use
+Custom hooks encapsulate all related side effects; colocate `useState` + `useEffect` inside the hook, not in the component
+Errors propagate via returned state (`{ data, error }`), never by throwing from hooks into component render
+Use `logger.info()` / `logger.error()` for all runtime output — no bare `console.*` in committed code

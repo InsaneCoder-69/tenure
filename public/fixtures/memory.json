@@ -1,0 +1,106 @@
+{
+  "conventions": [
+    {
+      "id": "no-any",
+      "text": "Never use `any` — always use concrete types or `unknown` with a type guard",
+      "tier": "block",
+      "proofCount": 6,
+      "trend": "stable",
+      "category": "TypeScript"
+    },
+    {
+      "id": "async-error-handling",
+      "text": "All `async` functions must wrap `await` calls in try/catch; never let rejections propagate unhandled",
+      "tier": "block",
+      "proofCount": 5,
+      "trend": "stable",
+      "category": "Error Handling"
+    },
+    {
+      "id": "hook-naming",
+      "text": "Custom hooks must start with the `use` prefix to satisfy React's Rules of Hooks",
+      "tier": "warn",
+      "proofCount": 4,
+      "trend": "strengthening",
+      "category": "React"
+    },
+    {
+      "id": "no-console",
+      "text": "Remove all `console.log` / `console.error` before merging; use the `logger` utility instead",
+      "tier": "warn",
+      "proofCount": 4,
+      "trend": "strengthening",
+      "category": "Code Quality"
+    },
+    {
+      "id": "props-interface-naming",
+      "text": "Component props interfaces must use the `Props` suffix (e.g. `ButtonProps`, not `IButton`)",
+      "tier": "warn",
+      "proofCount": 3,
+      "trend": "strengthening",
+      "category": "TypeScript"
+    },
+    {
+      "id": "exhaustive-deps",
+      "text": "`useEffect` dependency arrays must be exhaustive — do not suppress the exhaustive-deps ESLint rule",
+      "tier": "suggest",
+      "proofCount": 2,
+      "trend": "stable",
+      "category": "React"
+    },
+    {
+      "id": "default-export-pages",
+      "text": "Only route page files should use `export default`; all other modules should use named exports",
+      "tier": "suggest",
+      "proofCount": 3,
+      "trend": "weakening",
+      "category": "Module Structure"
+    },
+    {
+      "id": "no-inline-handlers",
+      "text": "Avoid inline arrow functions as JSX event handlers in render — extract them as named callbacks",
+      "tier": "suggest",
+      "proofCount": 1,
+      "trend": "stable",
+      "category": "Performance"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-1",
+      "text": "TypeScript strictness is treated as a first-class quality gate. `any` annotations are blocked in 100% of reviewed PRs — no exceptions have been accepted.",
+      "type": "observation",
+      "proofCount": 6,
+      "trend": "stable"
+    },
+    {
+      "id": "obs-2",
+      "text": "Error handling standards tightened noticeably after a production incident in Q3 2024. Since then, async functions without explicit error handling have been blocked consistently.",
+      "type": "observation",
+      "proofCount": 5,
+      "trend": "stable"
+    },
+    {
+      "id": "obs-3",
+      "text": "React hook naming violations are becoming more frequent as the codebase grows. The pattern has appeared across 4 PRs from 3 different authors in the last 30 days — possibly worth automating.",
+      "type": "observation",
+      "proofCount": 4,
+      "trend": "strengthening"
+    },
+    {
+      "id": "obs-4",
+      "text": "Debug `console.log` statements appear in nearly every PR review. The team has discussed adding an ESLint rule but hasn't done so yet.",
+      "type": "observation",
+      "proofCount": 4,
+      "trend": "strengthening"
+    }
+  ],
+  "styleGuide": [
+    "Annotate public API function signatures explicitly — don't rely on TypeScript inference for exported types",
+    "Prefer `unknown` over `any` for untrusted external data; narrow with runtime type guards before use",
+    "Custom hooks encapsulate all related side effects; colocate `useState` + `useEffect` inside the hook, not in the component",
+    "Errors propagate via returned state (`{ data, error }`), never by throwing from hooks into component render",
+    "Use `logger.info()` / `logger.error()` for all runtime output — no bare `console.*` in committed code"
+  ],
+  "lastUpdated": "2026-06-07T00:00:00Z"
+}

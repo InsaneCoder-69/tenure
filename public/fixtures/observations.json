@@ -1,0 +1,30 @@
+[
+  {
+    "id": "obs-1",
+    "text": "TypeScript strictness is treated as a first-class quality gate. `any` annotations are blocked in 100% of reviewed PRs — no exceptions have been accepted.",
+    "type": "observation",
+    "proofCount": 6,
+    "trend": "stable"
+  },
+  {
+    "id": "obs-2",
+    "text": "Error handling standards tightened noticeably after a production incident in Q3 2024. Since then, async functions without explicit error handling have been blocked consistently.",
+    "type": "observation",
+    "proofCount": 5,
+    "trend": "stable"
+  },
+  {
+    "id": "obs-3",
+    "text": "React hook naming violations are becoming more frequent as the codebase grows. The pattern has appeared across 4 PRs from 3 different authors in the last 30 days — possibly worth automating.",
+    "type": "observation",
+    "proofCount": 4,
+    "trend": "strengthening"
+  },
+  {
+    "id": "obs-4",
+    "text": "Debug `console.log` statements appear in nearly every PR review. The team has discussed adding an ESLint rule but hasn't done so yet.",
+    "type": "observation",
+    "proofCount": 4,
+    "trend": "strengthening"
+  }
+]

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #09090b;
+  --foreground: #fafafa;
 }
 
 @theme inline {
@@ -12,15 +12,42 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── tier-transition animations ─────────────────────────────────────────────── */
+
+@keyframes callout-enter {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes callout-exit {
+  from { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 0; transform: translateY(-6px) scale(0.97); }
+}
+
+@keyframes drain-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Pulsing glow on the convention row that just changed tier. */
+@keyframes row-glow-block {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(251, 113, 133, 0);    }
+  45%      { box-shadow: 0 0 10px 2px rgba(251, 113, 133, 0.28); }
+}
+
+@keyframes row-glow-warn {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(251, 191, 36, 0);    }
+  45%      { box-shadow: 0 0 10px 2px rgba(251, 191, 36, 0.22); }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans, system-ui, sans-serif);
 }
