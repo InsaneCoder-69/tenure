@@ -26,6 +26,43 @@ function reconstructDiff(lines: import('@/types').DiffLine[]): string {
     .join('\n');
 }
 
+// Accept plain code or partial diffs by normalizing to unified diff format.
+// Three cases:
+//   1. Has @@ header → already a unified diff, pass through.
+//   2. Has +/- markers but no @@ → add a minimal header.
+//   3. Plain code, no markers → prefix every line with + and add a header.
+function normalizeDiff(input: string): string {
+  const lines = input.split('\n');
+  if (lines.some((l) => l.startsWith('@@'))) return input;
+  if (lines.some((l) => l.startsWith('+') || l.startsWith('-'))) {
+    return `@@ -1,${lines.length} +1,${lines.length} @@\n${input}`;
+  }
+  const count = lines.length;
+  return `@@ -0,0 +1,${count} @@\n${lines.map((l) => `+${l}`).join('\n')}`;
+}
+
+type DL = import('@/types').DiffLine;
+
+function parseDiffLines(diff: string): DL[] {
+  const result: DL[] = [];
+  let newNo = 1;
+  let oldNo = 1;
+  for (const raw of diff.split('\n')) {
+    if (raw.startsWith('@@')) {
+      const m = raw.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+      if (m) { oldNo = parseInt(m[1], 10); newNo = parseInt(m[2], 10); }
+      result.push({ type: 'header',  lineNo: null,    oldLineNo: null,    content: raw });
+    } else if (raw.startsWith('+')) {
+      result.push({ type: 'added',   lineNo: newNo++, oldLineNo: null,    content: raw.slice(1) });
+    } else if (raw.startsWith('-')) {
+      result.push({ type: 'removed', lineNo: null,    oldLineNo: oldNo++, content: raw.slice(1) });
+    } else {
+      result.push({ type: 'context', lineNo: newNo++, oldLineNo: oldNo++, content: raw.startsWith(' ') ? raw.slice(1) : raw });
+    }
+  }
+  return result;
+}
+
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 export function useLive(
@@ -110,8 +147,9 @@ export function useLive(
     }
   }, [refreshMemory]);
 
-  // User-triggered review: accepts a raw unified diff string pasted by the user.
+  // User-triggered review: accepts plain code or a unified diff — normalizes automatically.
   const submitDiff = useCallback(async (rawDiff: string, filePath: string) => {
+    const diff = normalizeDiff(rawDiff);
     setIsReviewing(true);
     setError(null);
     setFeedbackStates({});
@@ -119,33 +157,18 @@ export function useLive(
       const res = await fetch('/api/review', {
         method: 'POST',
         headers: JSON_HEADERS,
-        body: JSON.stringify({ diff: rawDiff, filePath }),
+        body: JSON.stringify({ diff, filePath }),
       });
       if (res.ok) {
         const live = (await res.json()) as ReviewSession;
-        // Parse line numbers from @@ hunk headers so comments attach to the right lines.
-        type DL = import('@/types').DiffLine;
-        const diffLines: DL[] = [];
-        let newNo = 1;
-        let oldNo = 1;
-        for (const raw of rawDiff.split('\n')) {
-          if (raw.startsWith('@@')) {
-            const m = raw.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-            if (m) { oldNo = parseInt(m[1], 10); newNo = parseInt(m[2], 10); }
-            diffLines.push({ type: 'header', lineNo: null, oldLineNo: null, content: raw });
-          } else if (raw.startsWith('+')) {
-            diffLines.push({ type: 'added',   lineNo: newNo++, oldLineNo: null,    content: raw.slice(1) });
-          } else if (raw.startsWith('-')) {
-            diffLines.push({ type: 'removed', lineNo: null,    oldLineNo: oldNo++, content: raw.slice(1) });
-          } else {
-            diffLines.push({ type: 'context', lineNo: newNo++, oldLineNo: oldNo++, content: raw.startsWith(' ') ? raw.slice(1) : raw });
-          }
-        }
-        setSession({ id: live.id, filePath, diff: diffLines, comments: live.comments });
+        setSession({ id: live.id, filePath, diff: parseDiffLines(diff), comments: live.comments });
       } else {
-        setError('Review failed — check your diff format and try again');
+        const body = await res.text().catch(() => '(unreadable)');
+        console.error('[tenure] /api/review failed:', res.status, body);
+        setError(`Review failed (${res.status}) — see console for details`);
       }
-    } catch {
+    } catch (err) {
+      console.error('[tenure] /api/review error:', err);
       setError('Failed to connect to live API');
     } finally {
       setIsReviewing(false);

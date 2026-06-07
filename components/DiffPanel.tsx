@@ -174,7 +174,7 @@ function DiffInputPane({
       <textarea
         value={rawDiff}
         onChange={(e) => setRawDiff(e.target.value)}
-        placeholder={"Paste a unified diff here (lines starting with +, -, @@)…\n\n@@ -1,5 +1,8 @@\n-old line\n+new line"}
+        placeholder={"Paste code or a unified diff — plain code is wrapped automatically.\n\nExample (unified diff):\n@@ -1,4 +1,5 @@\n-old line\n+new line\n context\n\nOr just paste the file contents directly."}
         spellCheck={false}
         rows={9}
         className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded px-3 py-2
@@ -185,10 +185,7 @@ function DiffInputPane({
 
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] text-zinc-700 font-mono">
-          Unified diff format — lines starting with&nbsp;
-          <span className="text-emerald-700">+</span>,&nbsp;
-          <span className="text-rose-700">−</span>, and&nbsp;
-          <span className="text-zinc-600">@@</span>
+          Plain code or unified diff — auto-detected
         </span>
         <button
           onClick={() => void handleSubmit()}
