@@ -16,9 +16,9 @@ export default function TenureApp({ session: initialSession, memory: initialMemo
   const live = useLive(initialSession, initialMemory);
 
   const conventionMap = useMemo(
-    () => new Map<string, Convention>(live.memory.conventions.map((c) => [c.id, c])),
+    () => new Map<string, Convention>((live.memory?.conventions ?? []).map((c) => [c.id, c])),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [live.memory.conventions],
+    [live.memory?.conventions],
   );
 
   const isLoading = live.isLoadingReview || live.isLoadingMemory;
@@ -44,18 +44,34 @@ export default function TenureApp({ session: initialSession, memory: initialMemo
         )}
 
         <div className="flex-1 overflow-hidden min-w-0 border-r border-zinc-800">
-          <DiffPanel
-            session={live.session}
-            conventionMap={conventionMap}
-            feedbackStates={live.feedbackStates}
-            onFeedback={live.handleFeedback}
-            onSubmitDiff={live.submitDiff}
-            isReviewing={live.isReviewing}
-          />
+          {live.session ? (
+            <DiffPanel
+              session={live.session}
+              conventionMap={conventionMap}
+              feedbackStates={live.feedbackStates}
+              onFeedback={live.handleFeedback}
+              onSubmitDiff={live.submitDiff}
+              isReviewing={live.isReviewing}
+            />
+          ) : !isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-600">
+              <span className="text-2xl">⚠</span>
+              <p className="text-sm font-mono">Review unavailable — see error above</p>
+              <p className="text-xs font-mono text-zinc-700">
+                Paste a diff below to try again
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <div className="w-[400px] xl:w-[460px] shrink-0 overflow-hidden">
-          <MemoryPanel memory={live.memory} highlightId={null} />
+          {live.memory ? (
+            <MemoryPanel memory={live.memory} highlightId={null} />
+          ) : !isLoading ? (
+            <div className="flex items-center justify-center h-full text-zinc-700 text-sm font-mono">
+              Memory unavailable
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

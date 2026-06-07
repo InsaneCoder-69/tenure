@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReviewSession, TeamMemory, ReviewComment, Convention, FeedbackState } from '@/types';
 
 export interface UseLiveReturn {
-  session: ReviewSession;
-  memory: TeamMemory;
+  session: ReviewSession | null;
+  memory: TeamMemory | null;
   conventionMap: Map<string, Convention>;
   isLoadingReview: boolean;
   isLoadingMemory: boolean;
@@ -106,24 +106,31 @@ export function useLive(
           const live = (await reviewResult.value.json()) as ReviewSession;
           setSession({ ...initialSession, id: live.id, comments: live.comments });
         } else {
-          setSession(initialSession);
-          setError('Live review unavailable — showing fixture comments');
+          const errBody = reviewResult.status === 'fulfilled'
+            ? await reviewResult.value.text().catch(() => '(unreadable)')
+            : String((reviewResult as PromiseRejectedResult).reason);
+          const status = reviewResult.status === 'fulfilled' ? reviewResult.value.status : 0;
+          console.error('[tenure] /api/review failed on mount:', status, errBody);
+          setError(`Review failed${status ? ` (${status})` : ''}: ${errBody}`);
         }
         setIsLoadingReview(false);
 
         if (memoryResult.status === 'fulfilled' && memoryResult.value.ok) {
           setMemory((await memoryResult.value.json()) as TeamMemory);
         } else {
-          setMemory(initialMemory);
+          const errBody = memoryResult.status === 'fulfilled'
+            ? await memoryResult.value.text().catch(() => '(unreadable)')
+            : String((memoryResult as PromiseRejectedResult).reason);
+          const status = memoryResult.status === 'fulfilled' ? memoryResult.value.status : 0;
+          console.error('[tenure] /api/memory failed on mount:', status, errBody);
         }
         setIsLoadingMemory(false);
       })
-      .catch(() => {
-        setSession(initialSession);
-        setMemory(initialMemory);
+      .catch((err) => {
+        console.error('[tenure] mount fetch error:', err);
         setIsLoadingReview(false);
         setIsLoadingMemory(false);
-        setError('Failed to connect to live API');
+        setError(`Failed to connect to live API: ${err instanceof Error ? err.message : String(err)}`);
       });
     // Intentional: run once on mount. initialSession/initialMemory are stable server props.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,17 +182,15 @@ export function useLive(
     }
   }, []);
 
-  const displaySession = session ?? initialSession;
-  const displayMemory  = memory  ?? initialMemory;
-
   const conventionMap = useMemo(
-    () => new Map<string, Convention>(displayMemory.conventions.map((c) => [c.id, c])),
-    [displayMemory.conventions],
+    () => new Map<string, Convention>((memory?.conventions ?? []).map((c) => [c.id, c])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [memory?.conventions],
   );
 
   return {
-    session: displaySession,
-    memory:  displayMemory,
+    session,
+    memory,
     conventionMap,
     isLoadingReview,
     isLoadingMemory,
