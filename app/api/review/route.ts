@@ -4,22 +4,9 @@ import { recall, listObservations } from '@/lib/hindsight';
 import { generateReview, type ReviewConvention } from '@/lib/reviewer';
 import { computeTier } from '@/lib/trust-tiers';
 import { checkRateLimit, getRedis } from '@/lib/rate-limit';
-import { getFixtureSession } from '@/lib/fixtures';
 import type { ReviewSession, ReviewComment, TrustTier, FreshnessTrend } from '@/types';
 
 const CACHE_TTL_SECONDS = 3_600;
-
-function extractPassphrase(req: NextRequest): string {
-  return (
-    new URL(req.url).searchParams.get('passphrase') ??
-    req.headers.get('x-tenure-passphrase') ??
-    ''
-  );
-}
-
-function validPassphrase(p: string): boolean {
-  return !!process.env.LIVE_MODE_PASSPHRASE && p === process.env.LIVE_MODE_PASSPHRASE;
-}
 
 function parseTrend(raw: string | null | undefined): FreshnessTrend {
   if (raw === 'strengthening' || raw === 'stable' || raw === 'weakening' || raw === 'stale') {
@@ -30,15 +17,8 @@ function parseTrend(raw: string | null | undefined): FreshnessTrend {
 
 // POST /api/review
 // Body:    { diff: string; filePath?: string }
-// Auth:    ?passphrase=... or x-tenure-passphrase header (LIVE mode only)
 // Returns: ReviewSession
 export async function POST(req: NextRequest) {
-  // No valid passphrase → fixture fallback (REPLAY mode callers, zero cost).
-  const passphrase = extractPassphrase(req);
-  if (!validPassphrase(passphrase)) {
-    return Response.json(getFixtureSession());
-  }
-
   // Rate limit: 100 requests/day. Returns configured:false when Upstash env is absent.
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??

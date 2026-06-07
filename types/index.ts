@@ -1,5 +1,3 @@
-export type AppMode = 'replay' | 'live';
-
 export type FeedbackState = 'idle' | 'pending' | 'accepted' | 'rejected';
 
 export type TrustTier = 'suggest' | 'warn' | 'block';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { ReviewSession, TeamMemory, ReviewComment, Convention, DiffLine, FeedbackState } from '@/types';
+import type { ReviewSession, TeamMemory, ReviewComment, Convention, FeedbackState } from '@/types';
 
 export interface UseLiveReturn {
   session: ReviewSession;
@@ -9,12 +9,14 @@ export interface UseLiveReturn {
   conventionMap: Map<string, Convention>;
   isLoadingReview: boolean;
   isLoadingMemory: boolean;
+  isReviewing: boolean;
   error: string | null;
   feedbackStates: Record<string, FeedbackState>;
   handleFeedback: (comment: ReviewComment, accepted: boolean) => Promise<void>;
+  submitDiff: (rawDiff: string, filePath: string) => Promise<void>;
 }
 
-function reconstructDiff(lines: DiffLine[]): string {
+function reconstructDiff(lines: import('@/types').DiffLine[]): string {
   return lines
     .map((line) => {
       if (line.type === 'header') return line.content;
@@ -24,43 +26,31 @@ function reconstructDiff(lines: DiffLine[]): string {
     .join('\n');
 }
 
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
 export function useLive(
   initialSession: ReviewSession,
   initialMemory: TeamMemory,
-  enabled: boolean,
 ): UseLiveReturn {
-  // Passphrase is stable for the session lifetime — read once from URL on mount.
-  const [passphrase] = useState<string>(() =>
-    typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('passphrase') ?? ''
-      : '',
-  );
-
   const [session, setSession] = useState<ReviewSession | null>(null);
   const [memory, setMemory] = useState<TeamMemory | null>(null);
   const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [isLoadingMemory, setIsLoadingMemory] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedbackStates, setFeedbackStates] = useState<Record<string, FeedbackState>>({});
 
-  const authHeaders = useMemo(
-    () => ({ 'Content-Type': 'application/json', 'x-tenure-passphrase': passphrase }),
-    [passphrase],
-  );
-
-  // Refresh memory in the background (called after successful feedback).
+  // Refresh memory in the background after feedback.
   const refreshMemory = useCallback(() => {
-    fetch('/api/memory', { headers: authHeaders })
+    fetch('/api/memory', { headers: JSON_HEADERS })
       .then(async (res) => {
         if (res.ok) setMemory((await res.json()) as TeamMemory);
       })
       .catch(() => null);
-  }, [authHeaders]);
+  }, []);
 
   // On mount: fetch live review + memory in parallel.
   useEffect(() => {
-    if (!enabled) return;
-
     setIsLoadingReview(true);
     setIsLoadingMemory(true);
 
@@ -69,13 +59,12 @@ export function useLive(
     Promise.allSettled([
       fetch('/api/review', {
         method: 'POST',
-        headers: authHeaders,
+        headers: JSON_HEADERS,
         body: JSON.stringify({ diff, filePath: initialSession.filePath }),
       }),
-      fetch('/api/memory', { headers: authHeaders }),
+      fetch('/api/memory', { headers: JSON_HEADERS }),
     ])
       .then(async ([reviewResult, memoryResult]) => {
-        // Review: merge live comments onto the fixture diff lines.
         if (reviewResult.status === 'fulfilled' && reviewResult.value.ok) {
           const live = (await reviewResult.value.json()) as ReviewSession;
           setSession({ ...initialSession, id: live.id, comments: live.comments });
@@ -85,7 +74,6 @@ export function useLive(
         }
         setIsLoadingReview(false);
 
-        // Memory: use live data, fall back to fixture.
         if (memoryResult.status === 'fulfilled' && memoryResult.value.ok) {
           setMemory((await memoryResult.value.json()) as TeamMemory);
         } else {
@@ -102,31 +90,70 @@ export function useLive(
       });
     // Intentional: run once on mount. initialSession/initialMemory are stable server props.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
+  }, []);
 
-  const handleFeedback = useCallback(
-    async (comment: ReviewComment, accepted: boolean) => {
-      setFeedbackStates((prev) => ({ ...prev, [comment.id]: 'pending' }));
-      try {
-        const res = await fetch('/api/feedback', {
-          method: 'POST',
-          headers: authHeaders,
-          body: JSON.stringify({ comment, accepted }),
-        });
-        setFeedbackStates((prev) => ({
-          ...prev,
-          [comment.id]: res.ok ? (accepted ? 'accepted' : 'rejected') : 'idle',
-        }));
-        if (res.ok) refreshMemory();
-      } catch {
-        setFeedbackStates((prev) => ({ ...prev, [comment.id]: 'idle' }));
+  const handleFeedback = useCallback(async (comment: ReviewComment, accepted: boolean) => {
+    setFeedbackStates((prev) => ({ ...prev, [comment.id]: 'pending' }));
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ comment, accepted }),
+      });
+      setFeedbackStates((prev) => ({
+        ...prev,
+        [comment.id]: res.ok ? (accepted ? 'accepted' : 'rejected') : 'idle',
+      }));
+      if (res.ok) refreshMemory();
+    } catch {
+      setFeedbackStates((prev) => ({ ...prev, [comment.id]: 'idle' }));
+    }
+  }, [refreshMemory]);
+
+  // User-triggered review: accepts a raw unified diff string pasted by the user.
+  const submitDiff = useCallback(async (rawDiff: string, filePath: string) => {
+    setIsReviewing(true);
+    setError(null);
+    setFeedbackStates({});
+    try {
+      const res = await fetch('/api/review', {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ diff: rawDiff, filePath }),
+      });
+      if (res.ok) {
+        const live = (await res.json()) as ReviewSession;
+        // Parse line numbers from @@ hunk headers so comments attach to the right lines.
+        type DL = import('@/types').DiffLine;
+        const diffLines: DL[] = [];
+        let newNo = 1;
+        let oldNo = 1;
+        for (const raw of rawDiff.split('\n')) {
+          if (raw.startsWith('@@')) {
+            const m = raw.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+            if (m) { oldNo = parseInt(m[1], 10); newNo = parseInt(m[2], 10); }
+            diffLines.push({ type: 'header', lineNo: null, oldLineNo: null, content: raw });
+          } else if (raw.startsWith('+')) {
+            diffLines.push({ type: 'added',   lineNo: newNo++, oldLineNo: null,    content: raw.slice(1) });
+          } else if (raw.startsWith('-')) {
+            diffLines.push({ type: 'removed', lineNo: null,    oldLineNo: oldNo++, content: raw.slice(1) });
+          } else {
+            diffLines.push({ type: 'context', lineNo: newNo++, oldLineNo: oldNo++, content: raw.startsWith(' ') ? raw.slice(1) : raw });
+          }
+        }
+        setSession({ id: live.id, filePath, diff: diffLines, comments: live.comments });
+      } else {
+        setError('Review failed — check your diff format and try again');
       }
-    },
-    [authHeaders, refreshMemory],
-  );
+    } catch {
+      setError('Failed to connect to live API');
+    } finally {
+      setIsReviewing(false);
+    }
+  }, []);
 
   const displaySession = session ?? initialSession;
-  const displayMemory = memory ?? initialMemory;
+  const displayMemory  = memory  ?? initialMemory;
 
   const conventionMap = useMemo(
     () => new Map<string, Convention>(displayMemory.conventions.map((c) => [c.id, c])),
@@ -135,12 +162,14 @@ export function useLive(
 
   return {
     session: displaySession,
-    memory: displayMemory,
+    memory:  displayMemory,
     conventionMap,
     isLoadingReview,
     isLoadingMemory,
+    isReviewing,
     error,
     feedbackStates,
     handleFeedback,
+    submitDiff,
   };
 }

@@ -8,30 +8,13 @@ import {
 import { checkRateLimit } from '@/lib/rate-limit';
 import type { ReviewComment } from '@/types';
 
-function extractPassphrase(req: NextRequest): string {
-  return (
-    new URL(req.url).searchParams.get('passphrase') ??
-    req.headers.get('x-tenure-passphrase') ??
-    ''
-  );
-}
-
-function validPassphrase(p: string): boolean {
-  return !!process.env.LIVE_MODE_PASSPHRASE && p === process.env.LIVE_MODE_PASSPHRASE;
-}
-
 interface ObservationUpdate { text: string; proofCount: number; trend: string; }
 interface FeedbackResponse  { retained: boolean; pending: boolean; observation: ObservationUpdate | null; }
 
 // POST /api/feedback
 // Body:    { comment: ReviewComment; accepted: boolean }
-// Auth:    ?passphrase=... or x-tenure-passphrase header (LIVE only)
 // Returns: FeedbackResponse
 export async function POST(req: NextRequest) {
-  if (!validPassphrase(extractPassphrase(req))) {
-    return Response.json({ error: 'Valid LIVE_MODE_PASSPHRASE required' }, { status: 401 });
-  }
-
   // Rate limit: 300 requests/day.
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??

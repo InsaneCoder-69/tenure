@@ -10,18 +10,6 @@ import type { ObservationItem } from '@/lib/hindsight';
 const STYLE_GUIDE_CACHE_KEY  = 'tenure:style-guide';
 const STYLE_GUIDE_TTL_SECONDS = 300;
 
-function extractPassphrase(req: NextRequest): string {
-  return (
-    new URL(req.url).searchParams.get('passphrase') ??
-    req.headers.get('x-tenure-passphrase') ??
-    ''
-  );
-}
-
-function validPassphrase(p: string): boolean {
-  return !!process.env.LIVE_MODE_PASSPHRASE && p === process.env.LIVE_MODE_PASSPHRASE;
-}
-
 function parseTrend(raw: string | null | undefined): FreshnessTrend {
   if (raw === 'strengthening' || raw === 'stable' || raw === 'weakening' || raw === 'stale') return raw;
   return 'stable';
@@ -80,15 +68,8 @@ async function getStyleGuide(redis: Redis | null): Promise<string[]> {
 }
 
 // GET /api/memory
-// Auth:    ?passphrase=... or x-tenure-passphrase header (LIVE only)
 // Returns: TeamMemory
-//
-// REPLAY mode: the UI reads /public/fixtures directly — this endpoint is never called.
 export async function GET(req: NextRequest) {
-  if (!validPassphrase(extractPassphrase(req))) {
-    return Response.json({ error: 'Valid LIVE_MODE_PASSPHRASE required' }, { status: 401 });
-  }
-
   // Rate limit: 30 requests/day.
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
