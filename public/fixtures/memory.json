@@ -41,14 +41,6 @@
       "category": "TypeScript"
     },
     {
-      "id": "exhaustive-deps",
-      "text": "`useEffect` dependency arrays must be exhaustive — do not suppress the exhaustive-deps ESLint rule",
-      "tier": "suggest",
-      "proofCount": 2,
-      "trend": "stable",
-      "category": "React"
-    },
-    {
       "id": "default-export-pages",
       "text": "Only route page files should use `export default`; all other modules should use named exports",
       "tier": "suggest",
@@ -57,50 +49,188 @@
       "category": "Module Structure"
     },
     {
+      "id": "exhaustive-deps",
+      "text": "`useEffect` dependency arrays must be exhaustive — do not suppress the exhaustive-deps ESLint rule",
+      "tier": "suggest",
+      "proofCount": 2,
+      "trend": "stable",
+      "category": "React"
+    },
+    {
       "id": "no-inline-handlers",
       "text": "Avoid inline arrow functions as JSX event handlers in render — extract them as named callbacks",
       "tier": "suggest",
       "proofCount": 1,
-      "trend": "stable",
+      "trend": "stale",
       "category": "Performance"
     }
   ],
   "observations": [
     {
-      "id": "obs-1",
-      "text": "TypeScript strictness is treated as a first-class quality gate. `any` annotations are blocked in 100% of reviewed PRs — no exceptions have been accepted.",
+      "id": "496ce2b3-262e-40cc-84f4-28d54e7629f5",
+      "text": "The team allows inline callbacks for simple list renders and small components, rejecting the strict 'no-inline-handlers' rule to prioritize simplicity over over-engineering.",
       "type": "observation",
-      "proofCount": 6,
-      "trend": "stable"
+      "proofCount": 3
     },
     {
-      "id": "obs-2",
-      "text": "Error handling standards tightened noticeably after a production incident in Q3 2024. Since then, async functions without explicit error handling have been blocked consistently.",
+      "id": "dece36d4-a0a2-4880-957b-37482e44a457",
+      "text": "The team accepted the async-error-handling convention as a non-negotiable standard following post-incident hardening as of 2026-06-07.",
       "type": "observation",
-      "proofCount": 5,
-      "trend": "stable"
+      "proofCount": 1
     },
     {
-      "id": "obs-3",
-      "text": "React hook naming violations are becoming more frequent as the codebase grows. The pattern has appeared across 4 PRs from 3 different authors in the last 30 days — possibly worth automating.",
+      "id": "e6697562-75a3-48fc-9df2-442f4d06daf6",
+      "text": "The team requires structured logging before code can be merged as of 2026-06-07.",
       "type": "observation",
-      "proofCount": 4,
-      "trend": "strengthening"
+      "proofCount": 1
     },
     {
-      "id": "obs-4",
-      "text": "Debug `console.log` statements appear in nearly every PR review. The team has discussed adding an ESLint rule but hasn't done so yet.",
+      "id": "6e438352-f53b-47d4-86a9-b846533b8bb7",
+      "text": "The team accepted the suggestion to remove console logging as of 2026-06-07.",
       "type": "observation",
-      "proofCount": 4,
-      "trend": "strengthening"
+      "proofCount": 1
+    },
+    {
+      "id": "31866d80-a03c-4d61-b744-9111a84ca2f1",
+      "text": "The assistant renamed 'profileData' to 'useProfileData' on 2026-06-07 to comply with the team's custom hook naming convention.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "0e9808cf-4489-44e7-a07d-806fd3a8a8d2",
+      "text": "Custom React hooks must start with the 'use' prefix as a team convention to comply with the React Rules of Hooks linter, as demonstrated by the renaming of 'fetchProfile', 'getUser', and 'profileData'.",
+      "type": "observation",
+      "proofCount": 4
+    },
+    {
+      "id": "68db92ac-524d-400e-9c23-567b1c642062",
+      "text": "The assistant blocked a code review on 2026-06-07 because the async function lacked the required explicit try/catch block with a typed catch parameter.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "fa4d713b-4702-4f87-b221-9e08d871dcfa",
+      "text": "The team enforces a convention requiring all async functions to be wrapped in try/catch blocks with typed catch parameters for robust error handling, following a production outage in Q3 2024 caused by an unhandled rejection.",
+      "type": "observation",
+      "proofCount": 4
+    },
+    {
+      "id": "df3a625d-7d98-47d3-80a7-b35be4566118",
+      "text": "The team prohibits the use of the TypeScript 'any' type, requiring concrete types or 'unknown' with runtime type guards instead.",
+      "type": "observation",
+      "proofCount": 5
+    },
+    {
+      "id": "36cfc91d-ea29-489a-9d8e-25cc334e7e1f",
+      "text": "The team requires all console.log, console.error, and console.warn statements to be removed before code can be merged, replacing them with the @/lib/logger utility as of 2026-06-07.",
+      "type": "observation",
+      "proofCount": 2
+    },
+    {
+      "id": "d86d4b33-0293-46a1-a450-79bcec8f3317",
+      "text": "Team convention requires that only Next.js route page files use export default, while all other modules must use named exports to improve tree-shaking; this convention has been consistently applied to utility modules and files like 'lib/helpers.ts'.",
+      "type": "observation",
+      "proofCount": 5
+    },
+    {
+      "id": "c90dd6e6-a300-49ec-97a3-1e2ffdbfb064",
+      "text": "The assistant successfully implemented the team's try/catch error boundary convention for fetch calls in a pull request on 2026-06-07, specifically refactoring the fetchUser function.",
+      "type": "observation",
+      "proofCount": 2
+    },
+    {
+      "id": "97172e1b-aabc-4fd7-8d47-7f671a71e6ef",
+      "text": "The team is considering the implementation of an ESLint rule to enforce the no-console convention as of June 2026.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "ca40273f-d894-4846-b24e-a0e937c38313",
+      "text": "The assistant applied the Record<string, unknown> convention in 3 pull requests during the sprint.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "5f84d978-65af-4893-9461-763fd56bd763",
+      "text": "The team convention is to use Record<string, unknown> instead of any for dynamic objects to improve type safety.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "04178eb1-0c74-434e-abc2-0a38851a00a2",
+      "text": "The team bans the use of 'any' in generic type parameters, mandating 'unknown' combined with an assertion guard instead.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "22560e8e-721f-4de4-9fa4-f42aefde40eb",
+      "text": "The team standard practice is to use logger.error instead of console.error as of 2026-06-07.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "1cc2e575-f2b0-4db2-b9b7-eb6616b2407f",
+      "text": "The team adopted a convention to use ReadonlyArray<UserRecord> instead of any[] for parameters to improve type safety.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "e68a87c5-8aaa-447c-bed5-3375026994a5",
+      "text": "The team requires the use of logger.info() instead of console.log() for structured output in code reviews as of 2026-06-07.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "9cc0b3f1-2bbe-423e-9adb-35fe20cc5a13",
+      "text": "The team requires that useEffect dependency arrays are exhaustive and strictly prohibits the use of 'eslint-disable' comments for the 'react-hooks/exhaustive-deps' rule.",
+      "type": "observation",
+      "proofCount": 2
+    },
+    {
+      "id": "a4bca04b-77db-4a1c-b3ba-1d9f1e01fc5e",
+      "text": "The assistant renamed 'fetchProfile' to 'useFetchProfile' on 2026-06-07 to comply with the team's custom hook naming convention.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "1c963e29-fa9c-4563-9da8-511081998f58",
+      "text": "The team adopted a convention to name all component prop interfaces with a 'Props' suffix, explicitly replacing the 'I' prefix.",
+      "type": "observation",
+      "proofCount": 3
+    },
+    {
+      "id": "e1e2049e-4c90-488f-89ec-83a0d0e2cb95",
+      "text": "The assistant renamed the 'getUser' hook to 'useGetUser' on 2026-06-07 to comply with the team's custom hook naming convention.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "1fba1ecc-fd3e-435b-970a-7a0d95fc691d",
+      "text": "The team convention is to avoid using inline arrow functions as JSX event handlers in render methods, preferring to extract them as named callbacks to improve code readability.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "fa9285c7-92de-4a97-a647-fe10bbfc4661",
+      "text": "The interface 'IUserCard' was renamed to 'UserCardProps' to align with team naming conventions.",
+      "type": "observation",
+      "proofCount": 1
+    },
+    {
+      "id": "af2cbf58-b6e5-4cbf-bdab-46e450130946",
+      "text": "The team refactored component prop interfaces to follow the 'Props' suffix naming convention, which was accepted.",
+      "type": "observation",
+      "proofCount": 1
     }
   ],
   "styleGuide": [
-    "Annotate public API function signatures explicitly — don't rely on TypeScript inference for exported types",
-    "Prefer `unknown` over `any` for untrusted external data; narrow with runtime type guards before use",
-    "Custom hooks encapsulate all related side effects; colocate `useState` + `useEffect` inside the hook, not in the component",
-    "Errors propagate via returned state (`{ data, error }`), never by throwing from hooks into component render",
-    "Use `logger.info()` / `logger.error()` for all runtime output — no bare `console.*` in committed code"
+    "Never use the TypeScript `any` type; always declare concrete types or `unknown` with runtime type guards.",
+    "All asynchronous functions must be wrapped in `try/catch` blocks with typed catch parameters to ensure robust error handling.",
+    "Only Next.js route page files should use `export default`, as all other modules must use named exports for better tree-shaking.",
+    "React component props interfaces must use the `Props` suffix instead of an `I` prefix.",
+    "Custom React hooks must start with the `use` prefix to comply with linting rules.",
+    "All `useEffect` dependency arrays must be exhaustive, and suppressing the `react-hooks/exhaustive-deps` rule is strictly prohibited.",
+    "Remove all `console` logging statements before merging code and use the `@/lib/logger` utility for structured logging instead."
   ],
-  "lastUpdated": "2026-06-07T00:00:00Z"
+  "lastUpdated": "2026-06-07T12:43:56.370Z"
 }

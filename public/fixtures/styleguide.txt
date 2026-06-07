@@ -1,5 +1,7 @@
-Annotate public API function signatures explicitly — don't rely on TypeScript inference for exported types
-Prefer `unknown` over `any` for untrusted external data; narrow with runtime type guards before use
-Custom hooks encapsulate all related side effects; colocate `useState` + `useEffect` inside the hook, not in the component
-Errors propagate via returned state (`{ data, error }`), never by throwing from hooks into component render
-Use `logger.info()` / `logger.error()` for all runtime output — no bare `console.*` in committed code
+Never use the TypeScript `any` type; always declare concrete types or `unknown` with runtime type guards.
+All asynchronous functions must be wrapped in `try/catch` blocks with typed catch parameters to ensure robust error handling.
+Only Next.js route page files should use `export default`, as all other modules must use named exports for better tree-shaking.
+React component props interfaces must use the `Props` suffix instead of an `I` prefix.
+Custom React hooks must start with the `use` prefix to comply with linting rules.
+All `useEffect` dependency arrays must be exhaustive, and suppressing the `react-hooks/exhaustive-deps` rule is strictly prohibited.
+Remove all `console` logging statements before merging code and use the `@/lib/logger` utility for structured logging instead.
