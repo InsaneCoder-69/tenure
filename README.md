@@ -15,7 +15,7 @@ Tenure is an AI code reviewer that learns your team's conventions from real feed
 | | |
 |---|---|
 | **Live demo** | [https://tenure-green.vercel.app](https://tenure-green.vercel.app) |
-| **GitHub** | [https://github.com/vatsaltrivedi/tenure](https://github.com/vatsaltrivedi/tenure) |
+| **GitHub** | [https://github.com/InsaneCoder-69/tenure](https://github.com/InsaneCoder-69/tenure) |
 
 ---
 
@@ -106,7 +106,7 @@ Ranges 0–100. Acceptance rate is weighted at 60% — the team's trust in Tenur
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/vatsaltrivedi/tenure
+git clone https://github.com/InsaneCoder-69/tenure
 cd tenure
 npm install
 ```
